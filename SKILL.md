@@ -1,5 +1,5 @@
 ---
-name: powerpoint
+name: powerpoint-dev
 description: Create, read, edit .pptx decks with python-pptx.
 version: 1.1.0
 author: Nous Research
