@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.powerpoint-skill/schemas/powerpoint-template-add-v1.schema.json",
+  "title": "PowerPoint template append spec v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "slides"
+  ],
+  "properties": {
+    "schema": {
+      "const": "powerpoint.template-add/v1"
+    },
+    "slides": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "layout": {
+            "$ref": "#/$defs/layoutRef"
+          },
+          "title": {
+            "type": "string"
+          },
+          "bullets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/bullet"
+            }
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "layout"
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "layoutRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "index",
+        "name"
+      ]
+    },
+    "bullet": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "level": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4
+            },
+            "size": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "bold": {
+              "type": "boolean"
+            },
+            "italic": {
+              "type": "boolean"
+            },
+            "font": {
+              "type": "string"
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^[0-9A-Fa-f]{6}$"
+            },
+            "link": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ]
+        }
+      ]
+    }
+  }
+}

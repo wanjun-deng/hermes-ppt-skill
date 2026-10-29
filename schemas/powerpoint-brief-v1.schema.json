@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "powerpoint.brief/v1"
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          },
+          "chart": {
+            "type": "string",
+            "minLength": 1
+          },
+          "table": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "photos": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "minItems": 1
+    },
+    "preferences": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "slide_size": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*(?:\\.[0-9]+)?:[1-9][0-9]*(?:\\.[0-9]+)?$"
+    }
+  },
+  "required": [
+    "pages"
+  ]
+}

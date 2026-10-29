@@ -1,0 +1,575 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Source-aware presentation page plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "template",
+    "pages"
+  ],
+  "properties": {
+    "schema": {
+      "const": "powerpoint.presentation/v1"
+    },
+    "template": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "slide_count"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "slide_count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "materials": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "pages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "source_slide"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_slide": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "slide_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "index": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "slide_id",
+              "index"
+            ]
+          },
+          "preserve": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/shapeRef"
+            }
+          },
+          "notes": {
+            "type": "string"
+          },
+          "text": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "shape": {
+                  "$ref": "#/$defs/shapeRef"
+                },
+                "value": {},
+                "required": {
+                  "type": "boolean"
+                },
+                "source_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true
+                },
+                "font_size_pt": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 400
+                },
+                "alignment": {
+                  "enum": [
+                    "left",
+                    "center",
+                    "right"
+                  ]
+                },
+                "auto_size": {
+                  "const": "none"
+                },
+                "word_wrap": {
+                  "type": "boolean"
+                },
+                "font_family": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "character_spacing_pt": {
+                  "type": "number",
+                  "minimum": -5,
+                  "maximum": 20
+                }
+              },
+              "required": [
+                "shape",
+                "value"
+              ]
+            }
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "shape": {
+                  "$ref": "#/$defs/shapeRef"
+                },
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true
+                },
+                "fit": {
+                  "enum": [
+                    "preserve",
+                    "cover",
+                    "contain"
+                  ]
+                }
+              },
+              "required": [
+                "shape",
+                "path"
+              ]
+            }
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "shape": {
+                  "$ref": "#/$defs/shapeRef"
+                },
+                "rows": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "array"
+                  }
+                },
+                "source_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "shape",
+                "rows"
+              ]
+            }
+          },
+          "charts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "shape": {
+                  "$ref": "#/$defs/shapeRef"
+                },
+                "categories": {
+                  "type": "array",
+                  "minItems": 1
+                },
+                "series": {
+                  "type": "object",
+                  "minProperties": 1,
+                  "propertyNames": {
+                    "minLength": 1
+                  },
+                  "additionalProperties": {
+                    "type": "array"
+                  }
+                },
+                "title": {
+                  "type": "string"
+                },
+                "source_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true
+                },
+                "number_format": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "display_units": {
+                  "const": "none"
+                }
+              },
+              "required": [
+                "shape",
+                "categories",
+                "series"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "text"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "text": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "slide_indexes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "forbidden_text": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "$defs": {
+    "shapeRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "placeholder": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "shape_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "path": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "slideRef": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "slide_id": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "index": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "slide_id",
+            "index"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "alias": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "alias"
+          ]
+        }
+      ]
+    },
+    "layoutRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "index",
+        "name"
+      ]
+    },
+    "bullet": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "level": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4
+            },
+            "size": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "bold": {
+              "type": "boolean"
+            },
+            "italic": {
+              "type": "boolean"
+            },
+            "font": {
+              "type": "string"
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^[0-9A-Fa-f]{6}$"
+            },
+            "link": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ]
+        }
+      ]
+    },
+    "textOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "shape": {
+          "$ref": "#/$defs/shapeRef"
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {},
+        "required": {
+          "type": "boolean"
+        },
+        "font_size_pt": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 400
+        },
+        "alignment": {
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ]
+        },
+        "auto_size": {
+          "const": "none"
+        },
+        "word_wrap": {
+          "type": "boolean"
+        },
+        "font_family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "character_spacing_pt": {
+          "type": "number",
+          "minimum": -5,
+          "maximum": 20
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "oneOf": [
+        {
+          "required": [
+            "shape"
+          ]
+        },
+        {
+          "required": [
+            "role"
+          ]
+        }
+      ]
+    },
+    "imageOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "shape": {
+          "$ref": "#/$defs/shapeRef"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fit": {
+          "enum": [
+            "preserve",
+            "cover",
+            "contain"
+          ]
+        }
+      },
+      "required": [
+        "shape",
+        "path"
+      ]
+    },
+    "tableOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "shape": {
+          "$ref": "#/$defs/shapeRef"
+        },
+        "rows": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "array"
+          }
+        }
+      },
+      "required": [
+        "shape",
+        "rows"
+      ]
+    },
+    "chartOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "shape": {
+          "$ref": "#/$defs/shapeRef"
+        },
+        "categories": {
+          "type": "array",
+          "minItems": 1
+        },
+        "series": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {
+            "minLength": 1
+          },
+          "additionalProperties": {
+            "type": "array"
+          }
+        },
+        "title": {
+          "type": "string"
+        },
+        "number_format": {
+          "type": "string",
+          "minLength": 1
+        },
+        "display_units": {
+          "const": "none"
+        }
+      },
+      "required": [
+        "shape",
+        "categories",
+        "series"
+      ]
+    }
+  }
+}

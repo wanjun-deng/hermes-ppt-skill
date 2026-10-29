@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.powerpoint-skill/schemas/powerpoint-plan-result-v1.schema.json",
+  "title": "PowerPoint plan execution result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "ok",
+    "output",
+    "template_sha256",
+    "slides_before",
+    "slides_after",
+    "operations",
+    "applied",
+    "aliases",
+    "warnings"
+  ],
+  "properties": {
+    "schema": {
+      "const": "powerpoint.plan-result/v1"
+    },
+    "ok": {
+      "const": true
+    },
+    "output": {
+      "type": "string"
+    },
+    "template_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "slides_before": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "slides_after": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "operations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "filled_text": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "replaced_images": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "updated_tables": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "updated_charts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "updated_notes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "updated_backgrounds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "updated_footers": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "enabled_slide_numbers": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "duplicated_slides": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "removed_slides": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "appended_slides": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reordered_slides": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "filled_text",
+        "replaced_images",
+        "updated_tables",
+        "updated_charts",
+        "updated_notes",
+        "updated_backgrounds",
+        "updated_footers",
+        "enabled_slide_numbers",
+        "duplicated_slides",
+        "removed_slides",
+        "appended_slides",
+        "reordered_slides"
+      ]
+    },
+    "applied": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "action": {
+            "enum": [
+              "fill",
+              "duplicate",
+              "append",
+              "remove",
+              "reorder"
+            ]
+          },
+          "slide_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "created_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "to": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "index",
+          "action"
+        ]
+      }
+    },
+    "aliases": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "slide_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "index": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "slide_id",
+              "index"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "slide_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "removed": {
+                "const": true
+              }
+            },
+            "required": [
+              "slide_id",
+              "removed"
+            ]
+          }
+        ]
+      }
+    },
+    "warnings": {
+      "type": "array"
+    }
+  }
+}

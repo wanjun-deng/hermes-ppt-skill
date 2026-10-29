@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "powerpoint.visual-review/v1"
+    },
+    "artifact_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "reviewer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "slides": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "slide_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "image_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "observations": {
+            "type": "string",
+            "minLength": 1
+          },
+          "checks": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "text_fit": {
+                "enum": [
+                  "pass",
+                  "fail",
+                  "not_applicable"
+                ]
+              },
+              "overlap": {
+                "enum": [
+                  "pass",
+                  "fail",
+                  "not_applicable"
+                ]
+              },
+              "images": {
+                "enum": [
+                  "pass",
+                  "fail",
+                  "not_applicable"
+                ]
+              },
+              "contrast": {
+                "enum": [
+                  "pass",
+                  "fail",
+                  "not_applicable"
+                ]
+              },
+              "template_consistency": {
+                "enum": [
+                  "pass",
+                  "fail",
+                  "not_applicable"
+                ]
+              },
+              "sample_residue": {
+                "enum": [
+                  "pass",
+                  "fail",
+                  "not_applicable"
+                ]
+              }
+            },
+            "required": [
+              "text_fit",
+              "overlap",
+              "images",
+              "contrast",
+              "template_consistency",
+              "sample_residue"
+            ]
+          },
+          "findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "severity",
+                "evidence"
+              ],
+              "properties": {
+                "severity": {
+                  "enum": [
+                    "info",
+                    "warning",
+                    "blocking"
+                  ]
+                },
+                "evidence": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "suggestion": {
+                  "type": "string"
+                },
+                "shape_ref": {
+                  "type": "object"
+                },
+                "region": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 4,
+                  "maxItems": 4
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "slide_index",
+          "image_sha256",
+          "observations",
+          "checks"
+        ]
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "schema",
+    "artifact_sha256",
+    "reviewer",
+    "slides"
+  ]
+}

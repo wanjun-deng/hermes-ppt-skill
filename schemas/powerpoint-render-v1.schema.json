@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.powerpoint-skill/schemas/powerpoint-render-v1.schema.json",
+  "title": "PowerPoint render manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "ok",
+    "rendered",
+    "source"
+  ],
+  "properties": {
+    "schema": {
+      "const": "powerpoint.render/v1"
+    },
+    "ok": {
+      "const": true
+    },
+    "rendered": {
+      "type": "boolean"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "slide_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "slide_count"
+      ]
+    },
+    "dpi": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "slides": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "slide_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "output": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "width_px": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "height_px": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "slide_index",
+          "output",
+          "sha256",
+          "width_px",
+          "height_px"
+        ]
+      }
+    },
+    "missing": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "guidance": {
+      "type": "string"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "rendered": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "dpi",
+          "slides"
+        ]
+      },
+      "else": {
+        "required": [
+          "missing",
+          "guidance"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.powerpoint-skill/schemas/powerpoint-template-result-v1.schema.json",
+  "title": "PowerPoint template fill result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "powerpoint.template-result/v1"
+    },
+    "ok": {
+      "const": true
+    },
+    "output": {
+      "type": "string"
+    },
+    "tokens_filled": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "token_counts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "unused_values": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "remaining_tokens": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "added_slides": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "slide_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "index": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "slide_id",
+          "index"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schema",
+    "ok",
+    "output",
+    "tokens_filled",
+    "token_counts",
+    "unused_values",
+    "remaining_tokens",
+    "added_slides"
+  ]
+}

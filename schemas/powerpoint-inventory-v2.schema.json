@@ -1,0 +1,1046 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.powerpoint-skill/schemas/powerpoint-inventory-v2.schema.json",
+  "title": "PowerPoint inventory v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "ok",
+    "template",
+    "presentation",
+    "masters",
+    "layouts",
+    "slides",
+    "warnings"
+  ],
+  "properties": {
+    "schema": {
+      "const": "powerpoint.inventory/v2"
+    },
+    "ok": {
+      "const": true
+    },
+    "template": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "filename": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "path",
+        "filename",
+        "sha256",
+        "size_bytes"
+      ]
+    },
+    "presentation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "slide_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "layout_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "master_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "slide_size": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "width_emu": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height_emu": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "width_inches": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "height_inches": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": [
+            "width_emu",
+            "height_emu",
+            "width_inches",
+            "height_inches"
+          ]
+        }
+      },
+      "required": [
+        "slide_count",
+        "layout_count",
+        "master_count",
+        "slide_size"
+      ]
+    },
+    "masters": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/master"
+      }
+    },
+    "layouts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/layout"
+      }
+    },
+    "slides": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/slide"
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/warning"
+      }
+    }
+  },
+  "$defs": {
+    "rectInt": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "left": {
+          "type": "integer"
+        },
+        "top": {
+          "type": "integer"
+        },
+        "width": {
+          "type": "integer"
+        },
+        "height": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "left",
+        "top",
+        "width",
+        "height"
+      ]
+    },
+    "rectNumber": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "left": {
+          "type": "number"
+        },
+        "top": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "left",
+        "top",
+        "width",
+        "height"
+      ]
+    },
+    "shapeRef": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "placeholder": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "placeholder"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "shape_id": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "path": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "shape_id",
+            "path",
+            "name"
+          ]
+        }
+      ]
+    },
+    "originalSlideRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "slide_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "slide_id",
+        "index"
+      ]
+    },
+    "layoutRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "index",
+        "name"
+      ]
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "font": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "size_pt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "bold": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "italic": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "color": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "hyperlink": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "text",
+        "font",
+        "size_pt",
+        "bold",
+        "italic",
+        "color",
+        "hyperlink"
+      ]
+    },
+    "paragraph": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "alignment": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "bullet": {
+          "type": "boolean"
+        },
+        "runs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/run"
+          }
+        }
+      },
+      "required": [
+        "text",
+        "level",
+        "alignment",
+        "bullet",
+        "runs"
+      ]
+    },
+    "shape": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "shape_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "auto_shape_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "path": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "z_order": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "group_path": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "shape_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "name": {
+                "type": "string"
+              },
+              "path": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "required": [
+              "shape_id",
+              "name",
+              "path"
+            ]
+          }
+        },
+        "recommended_ref": {
+          "$ref": "#/$defs/shapeRef"
+        },
+        "editable_from_slide": {
+          "const": false
+        },
+        "placeholder": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "idx": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "type": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "idx",
+                "type"
+              ]
+            }
+          ]
+        },
+        "bounds": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "accuracy": {
+              "enum": [
+                "exact",
+                "approximate"
+              ]
+            },
+            "local_emu": {
+              "$ref": "#/$defs/rectInt"
+            },
+            "slide_emu": {
+              "$ref": "#/$defs/rectInt"
+            },
+            "slide_inches": {
+              "$ref": "#/$defs/rectNumber"
+            }
+          },
+          "required": [
+            "accuracy",
+            "local_emu",
+            "slide_emu",
+            "slide_inches"
+          ]
+        },
+        "transform": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "rotation_degrees": {
+              "type": "number"
+            },
+            "flip_h": {
+              "type": "boolean"
+            },
+            "flip_v": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "rotation_degrees",
+            "flip_h",
+            "flip_v"
+          ]
+        },
+        "style": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "fill": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "color": {
+                      "type": "string"
+                    },
+                    "transparency": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              ]
+            },
+            "line": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "color": {
+                      "type": "string"
+                    },
+                    "width_emu": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "dash_style": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "required": [
+            "fill",
+            "line"
+          ]
+        },
+        "capabilities": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "type": "boolean"
+            },
+            "picture": {
+              "type": "boolean"
+            },
+            "table": {
+              "type": "boolean"
+            },
+            "chart": {
+              "type": "boolean"
+            },
+            "group": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "text",
+            "picture",
+            "table",
+            "chart",
+            "group"
+          ]
+        },
+        "content": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "paragraph_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "paragraphs": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/paragraph"
+              }
+            },
+            "table": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "row_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "column_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "cells": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "required": [
+                "row_count",
+                "column_count",
+                "cells"
+              ]
+            },
+            "chart": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "chart_type": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "categories": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "series": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "name": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "values": {
+                        "type": "array",
+                        "items": {
+                          "type": [
+                            "number",
+                            "string",
+                            "null"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "values"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "chart_type",
+                "title",
+                "categories",
+                "series"
+              ]
+            },
+            "image": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "readable": {
+                      "const": false
+                    }
+                  },
+                  "required": [
+                    "readable"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "filename": {
+                      "type": "string"
+                    },
+                    "extension": {
+                      "type": "string"
+                    },
+                    "content_type": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "size_bytes": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    }
+                  },
+                  "required": [
+                    "filename",
+                    "extension",
+                    "content_type",
+                    "size_bytes",
+                    "sha256"
+                  ]
+                }
+              ]
+            },
+            "group": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "children": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              },
+              "required": [
+                "children"
+              ]
+            }
+          }
+        },
+        "text_style": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "max_font_size_pt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "font_sizes_pt": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "fonts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "colors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "max_font_size_pt",
+            "font_sizes_pt",
+            "fonts",
+            "colors"
+          ]
+        },
+        "text_frame": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "margin_emu": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "left": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "right": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "top": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "bottom": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "left",
+                "right",
+                "top",
+                "bottom"
+              ]
+            },
+            "word_wrap": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "auto_size": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "vertical_anchor": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "margin_emu",
+            "word_wrap",
+            "auto_size",
+            "vertical_anchor"
+          ]
+        }
+      },
+      "required": [
+        "shape_id",
+        "name",
+        "type",
+        "auto_shape_type",
+        "path",
+        "z_order",
+        "group_path",
+        "placeholder",
+        "bounds",
+        "transform",
+        "style",
+        "capabilities",
+        "content"
+      ]
+    },
+    "warning": {
+      "type": "object",
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "recommended_ref": {
+          "$ref": "#/$defs/layoutRef"
+        },
+        "name": {
+          "type": "string"
+        },
+        "placeholders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "idx": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "type": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "bounds_emu": {
+                "$ref": "#/$defs/rectInt"
+              },
+              "bounds_inches": {
+                "$ref": "#/$defs/rectNumber"
+              }
+            },
+            "required": [
+              "idx",
+              "type",
+              "name",
+              "bounds_emu",
+              "bounds_inches"
+            ]
+          }
+        },
+        "shapes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/shape"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/warning"
+          }
+        }
+      },
+      "required": [
+        "index",
+        "recommended_ref",
+        "name",
+        "placeholders",
+        "shapes",
+        "warnings"
+      ]
+    },
+    "master": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "shapes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/shape"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/warning"
+          }
+        }
+      },
+      "required": [
+        "index",
+        "shapes",
+        "warnings"
+      ]
+    },
+    "slide": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "slide_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "recommended_ref": {
+          "$ref": "#/$defs/originalSlideRef"
+        },
+        "layout": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "index": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "index",
+                "name"
+              ]
+            }
+          ]
+        },
+        "notes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "shapes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/shape"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/warning"
+          }
+        }
+      },
+      "required": [
+        "index",
+        "slide_id",
+        "recommended_ref",
+        "layout",
+        "notes",
+        "shapes",
+        "warnings"
+      ]
+    }
+  }
+}

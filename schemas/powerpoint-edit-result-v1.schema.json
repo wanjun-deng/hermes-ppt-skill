@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.powerpoint-skill/schemas/powerpoint-edit-result-v1.schema.json",
+  "title": "PowerPoint edit result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "powerpoint.edit-result/v1"
+    },
+    "ok": {
+      "const": true
+    },
+    "replacements": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "chart_updated": {
+      "const": true
+    },
+    "image_swapped": {
+      "const": true
+    },
+    "duplicated_to": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "background_set": {
+      "const": true
+    },
+    "hyperlinked_runs": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "slide_number_enabled": {
+      "type": "boolean"
+    },
+    "footer_set": {
+      "const": true
+    },
+    "notes_set": {
+      "const": true
+    },
+    "notes_appended": {
+      "const": true
+    },
+    "slide_removed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "slide_moved": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "type": "integer",
+          "minimum": 0
+        }
+      ],
+      "items": false
+    },
+    "output": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "ok",
+    "replacements",
+    "output"
+  ]
+}

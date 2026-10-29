@@ -44,90 +44,33 @@ import copy
 import json
 import sys
 
-from lxml import etree
 from pptx import Presentation
 from pptx.chart.data import CategoryChartData
 from pptx.dml.color import RGBColor
-from pptx.enum.shapes import MSO_SHAPE_TYPE
-from pptx.oxml.ns import qn
+
+from pptx_common import (PptxSkillError, atomic_save_presentation,
+                         write_error, write_json)
+from pptx_inventory import is_picture_shape, walk_shapes
+from pptx_text import (iter_text_frames, replace_all_text, replace_text,
+                       replace_in_text_frame)
 
 R_EMBED = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
 
 
-def _run_format_key(r):
-    """Canonical string for a run's <a:rPr>; None when absent."""
-    rPr = r.find(qn("a:rPr"))
-    if rPr is None:
-        return None
-    return etree.tostring(rPr)
+class EditError(PptxSkillError):
+    code = "invalid_edit"
 
 
-def normalize_runs(para):
-    """Merge adjacent runs whose formatting is byte-identical.
-
-    PowerPoint splits paragraph text into runs at spell-check and edit
-    boundaries even when formatting never changes; merging them back makes
-    cross-run text replacement lossless for the common case.
-    """
-    runs = list(para.runs)
-    i = 0
-    while i + 1 < len(runs):
-        a, b = runs[i], runs[i + 1]
-        if (_run_format_key(a._r) == _run_format_key(b._r)
-                and a._r.getnext() is b._r):
-            a.text = a.text + b.text
-            b._r.getparent().remove(b._r)
-            runs.pop(i + 1)
-        else:
-            i += 1
-
-
-def replace_in_text_frame(text_frame, old, new):
-    count = 0
-    for para in text_frame.paragraphs:
-        joined = "".join(run.text for run in para.runs)
-        if old not in joined:
-            continue
-        if not any(old in run.text for run in para.runs):
-            # Match spans runs: merge identically-formatted neighbours
-            # first, which resolves pure spell-check splits losslessly.
-            normalize_runs(para)
-        if any(old in run.text for run in para.runs):
-            # Run-level replace: preserves each run's formatting exactly.
-            for run in para.runs:
-                if old in run.text:
-                    count += run.text.count(old)
-                    run.text = run.text.replace(old, new)
-        else:
-            # Match spans genuinely differently-formatted runs -> rewrite
-            # paragraph, keeping only the first run's formatting (caveat).
-            joined = "".join(run.text for run in para.runs)
-            count += joined.count(old)
-            first = para.runs[0]
-            first.text = joined.replace(old, new)
-            for run in para.runs[1:]:
-                run._r.getparent().remove(run._r)
-    return count
-
-
-def iter_text_frames(slide):
-    for shape in slide.shapes:
-        if shape.has_text_frame:
-            yield shape.text_frame
-        if shape.has_table:
-            for row in shape.table.rows:
-                for cell in row.cells:
-                    yield cell.text_frame
-    if slide.has_notes_slide:
-        yield slide.notes_slide.notes_text_frame
-
-
-def replace_text(prs, old, new):
-    total = 0
-    for slide in prs.slides:
-        for tf in iter_text_frames(slide):
-            total += replace_in_text_frame(tf, old, new)
-    return total
+def _slide_at(prs, index, context="slide"):
+    try:
+        value = int(index)
+    except (TypeError, ValueError) as exc:
+        raise EditError(f"{context} index must be an integer: {index!r}",
+                        code="invalid_slide_ref") from exc
+    if value < 0 or value >= len(prs.slides):
+        raise EditError(f"{context} index is out of range: {value}",
+                        code="invalid_slide_ref")
+    return value, prs.slides[value]
 
 
 def _read_chart_data(chart):
@@ -152,11 +95,17 @@ def update_chart(prs, spec_path):
     """
     with open(spec_path, encoding="utf-8") as fh:
         spec = json.load(fh)
-    slide = prs.slides[spec.get("slide", 0)]
-    charts = [s.chart for s in slide.shapes if s.has_chart]
+    slide_index, slide = _slide_at(prs, spec.get("slide", 0))
+    charts = [node.shape.chart for node in walk_shapes(slide.shapes)
+              if node.shape.has_chart]
     if not charts:
-        raise SystemExit(f"no chart on slide {spec.get('slide', 0)}")
-    chart = charts[spec.get("chart", 0)]
+        raise EditError(f"no chart on slide {slide_index}", code="shape_not_found")
+    chart_index = spec.get("chart", 0)
+    if (isinstance(chart_index, bool) or not isinstance(chart_index, int)
+            or chart_index < 0 or chart_index >= len(charts)):
+        raise EditError(f"chart index is out of range: {chart_index!r}",
+                        code="shape_not_found")
+    chart = charts[chart_index]
 
     if "ops" in spec:
         categories, series = _read_chart_data(chart)
@@ -166,7 +115,7 @@ def update_chart(prs, spec_path):
             if kind == "update_series":
                 match = [s for s in series if s[0] == op["name"]]
                 if not match:
-                    raise SystemExit(f"no series named {op['name']!r}")
+                    raise EditError(f"no series named {op['name']!r}", code="series_not_found")
                 match[0][1] = op["values"]
                 dirty = True
             elif kind == "add_series":
@@ -176,15 +125,16 @@ def update_chart(prs, spec_path):
                 before = len(series)
                 series = [s for s in series if s[0] != op["name"]]
                 if len(series) == before:
-                    raise SystemExit(f"no series named {op['name']!r}")
+                    raise EditError(f"no series named {op['name']!r}", code="series_not_found")
                 dirty = True
             elif kind == "rename_category":
                 if "index" in op:
                     idx = int(op["index"])
                 else:
                     if op["from"] not in categories:
-                        raise SystemExit(
-                            f"no category named {op['from']!r}")
+                        raise EditError(
+                            f"no category named {op['from']!r}",
+                            code="category_not_found")
                     idx = categories.index(op["from"])
                 categories[idx] = op["to"]
                 dirty = True
@@ -192,7 +142,7 @@ def update_chart(prs, spec_path):
                 chart.has_title = True
                 chart.chart_title.text_frame.text = op["title"]
             else:
-                raise SystemExit(f"unknown chart op {kind!r}")
+                raise EditError(f"unknown chart op {kind!r}", code="unknown_operation")
         if dirty:
             data = CategoryChartData()
             data.categories = categories
@@ -209,20 +159,30 @@ def update_chart(prs, spec_path):
 
 
 def swap_image(prs, slide_idx, shape_name, new_path):
-    slide = prs.slides[int(slide_idx)]
-    for shape in slide.shapes:
-        if (shape.shape_type == MSO_SHAPE_TYPE.PICTURE
-                and shape.name == shape_name):
-            image_part, rid = slide.part.get_or_add_image_part(new_path)
-            blip = shape._element.blipFill.blip
-            blip.set(R_EMBED + "embed", rid)
-            return True
-    raise SystemExit(f"no picture named {shape_name!r} on slide {slide_idx}")
+    _, slide = _slide_at(prs, slide_idx)
+    matches = [
+        node.shape for node in walk_shapes(slide.shapes)
+        if is_picture_shape(node.shape)
+        and node.shape.name == shape_name
+    ]
+    if not matches:
+        raise EditError(
+            f"no picture named {shape_name!r} on slide {slide_idx}",
+            code="shape_not_found")
+    if len(matches) > 1:
+        raise EditError(
+            f"picture name {shape_name!r} is ambiguous on slide {slide_idx}",
+            code="ambiguous_shape")
+    shape = matches[0]
+    _, rid = slide.part.get_or_add_image_part(new_path)
+    shape._element.blipFill.blip.set(R_EMBED + "embed", rid)
+    return True
 
 
 def remove_slide(prs, index):
+    index, _ = _slide_at(prs, index)
     sldIdLst = prs.slides._sldIdLst
-    slide_id = list(sldIdLst)[int(index)]
+    slide_id = list(sldIdLst)[index]
     rid = slide_id.get(R_EMBED + "id")
     prs.part.drop_rel(rid)
     sldIdLst.remove(slide_id)
@@ -230,11 +190,20 @@ def remove_slide(prs, index):
 
 def move_slide(prs, src, dst):
     """Reorder by moving the <p:sldId> element inside <p:sldIdLst>."""
+    src, _ = _slide_at(prs, src, "source slide")
+    try:
+        dst = int(dst)
+    except (TypeError, ValueError) as exc:
+        raise EditError(f"destination index must be an integer: {dst!r}",
+                        code="invalid_slide_ref") from exc
+    if dst < 0 or dst >= len(prs.slides):
+        raise EditError(f"destination index is out of range: {dst}",
+                        code="invalid_slide_ref")
     sldIdLst = prs.slides._sldIdLst
     ids = list(sldIdLst)
-    element = ids[int(src)]
+    element = ids[src]
     sldIdLst.remove(element)
-    sldIdLst.insert(int(dst), element)
+    sldIdLst.insert(dst, element)
 
 
 def duplicate_slide(prs, index):
@@ -245,9 +214,9 @@ def duplicate_slide(prs, index):
     relationship embeds a separate XLSX workbook part, and cloning that
     graph reliably is not supported — better to refuse than corrupt.
     """
-    source = prs.slides[int(index)]
-    if any(sh.has_chart for sh in source.shapes):
-        raise SystemExit(
+    index, source = _slide_at(prs, index)
+    if any(node.shape.has_chart for node in walk_shapes(source.shapes)):
+        raise EditError(
             f"slide {index} contains a chart; duplication of chart slides "
             "is not supported (chart XML embeds a workbook part that "
             "cannot be cloned safely). Rebuild the chart on a new slide "
@@ -295,9 +264,10 @@ def add_hyperlink(prs, slide_idx, text, url):
 
     The link applies to the whole run (python-pptx links whole runs).
     """
-    slide = prs.slides[int(slide_idx)]
+    _, slide = _slide_at(prs, slide_idx)
     hits = 0
-    for shape in slide.shapes:
+    for node in walk_shapes(slide.shapes):
+        shape = node.shape
         if not shape.has_text_frame:
             continue
         for para in shape.text_frame.paragraphs:
@@ -306,7 +276,7 @@ def add_hyperlink(prs, slide_idx, text, url):
                     run.hyperlink.address = url
                     hits += 1
     if not hits:
-        raise SystemExit(f"no run containing {text!r} on slide {slide_idx}")
+        raise EditError(f"no run containing {text!r} on slide {slide_idx}", code="text_not_found")
     return hits
 
 
@@ -341,9 +311,9 @@ def set_footer(slide, text):
     if shape is None:
         shape = _copy_layout_placeholder(slide, 11)
     if shape is None:
-        raise SystemExit("layout provides no footer placeholder; add a "
-                         "textbox instead")
-    shape.text_frame.text = text
+        raise EditError("layout provides no footer placeholder; add a "
+                        "textbox instead", code="placeholder_not_found")
+    replace_all_text(shape.text_frame, text)
     return True
 
 
@@ -353,12 +323,14 @@ def set_notes(slide, text, append=False):
         para = tf.add_paragraph()
         para.text = text
     else:
-        tf.text = text
+        replace_all_text(tf, text)
 
 
 def main(argv=None):
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     parser = argparse.ArgumentParser(
         description="Edit a .pptx: replace text, update chart data, swap "
                     "images, duplicate/remove/reorder slides, backgrounds, "
@@ -386,49 +358,64 @@ def main(argv=None):
     parser.add_argument("--append-notes", nargs=2, metavar=("SLIDE", "TEXT"))
     args = parser.parse_args(argv)
 
-    prs = Presentation(args.pptx)
-    report = {"ok": True, "replacements": 0}
+    try:
+        prs = Presentation(args.pptx)
+        report = {
+            "schema": "powerpoint.edit-result/v1",
+            "ok": True,
+            "replacements": 0,
+        }
+        for old_text, new_text in args.replace_text:
+            if old_text == "":
+                raise EditError("replace-text OLD cannot be empty",
+                                code="invalid_text_operation")
+            report["replacements"] += replace_text(prs, old_text, new_text)
+        if args.chart_data:
+            update_chart(prs, args.chart_data)
+            report["chart_updated"] = True
+        if args.swap_image:
+            swap_image(prs, *args.swap_image)
+            report["image_swapped"] = True
+        if args.duplicate_slide is not None:
+            report["duplicated_to"] = duplicate_slide(prs, args.duplicate_slide)
+        if args.set_background:
+            _, slide = _slide_at(prs, args.set_background[0])
+            set_background(slide, args.set_background[1])
+            report["background_set"] = True
+        if args.hyperlink:
+            report["hyperlinked_runs"] = add_hyperlink(prs, *args.hyperlink)
+        if args.enable_slide_number is not None:
+            _, slide = _slide_at(prs, args.enable_slide_number)
+            report["slide_number_enabled"] = enable_slide_number(slide)
+        if args.set_footer:
+            _, slide = _slide_at(prs, args.set_footer[0])
+            set_footer(slide, args.set_footer[1])
+            report["footer_set"] = True
+        if args.set_notes:
+            _, slide = _slide_at(prs, args.set_notes[0])
+            set_notes(slide, args.set_notes[1])
+            report["notes_set"] = True
+        if args.append_notes:
+            _, slide = _slide_at(prs, args.append_notes[0])
+            set_notes(slide, args.append_notes[1], append=True)
+            report["notes_appended"] = True
+        if args.remove_slide is not None:
+            remove_slide(prs, args.remove_slide)
+            report["slide_removed"] = args.remove_slide
+        if args.move_slide:
+            move_slide(prs, *args.move_slide)
+            report["slide_moved"] = args.move_slide
 
-    for old, new in args.replace_text:
-        report["replacements"] += replace_text(prs, old, new)
-    if args.chart_data:
-        update_chart(prs, args.chart_data)
-        report["chart_updated"] = True
-    if args.swap_image:
-        swap_image(prs, *args.swap_image)
-        report["image_swapped"] = True
-    if args.duplicate_slide is not None:
-        report["duplicated_to"] = duplicate_slide(prs, args.duplicate_slide)
-    if args.set_background:
-        set_background(prs.slides[int(args.set_background[0])],
-                       args.set_background[1])
-        report["background_set"] = True
-    if args.hyperlink:
-        report["hyperlinked_runs"] = add_hyperlink(prs, *args.hyperlink)
-    if args.enable_slide_number is not None:
-        report["slide_number_enabled"] = enable_slide_number(
-            prs.slides[args.enable_slide_number])
-    if args.set_footer:
-        set_footer(prs.slides[int(args.set_footer[0])], args.set_footer[1])
-        report["footer_set"] = True
-    if args.set_notes:
-        set_notes(prs.slides[int(args.set_notes[0])], args.set_notes[1])
-        report["notes_set"] = True
-    if args.append_notes:
-        set_notes(prs.slides[int(args.append_notes[0])],
-                  args.append_notes[1], append=True)
-        report["notes_appended"] = True
-    if args.remove_slide is not None:
-        remove_slide(prs, args.remove_slide)
-        report["slide_removed"] = args.remove_slide
-    if args.move_slide:
-        move_slide(prs, *args.move_slide)
-        report["slide_moved"] = args.move_slide
-
-    out = args.output or args.pptx
-    prs.save(out)
-    report["output"] = out
-    print(json.dumps(report))
+        out = args.output or args.pptx
+        report["output"] = atomic_save_presentation(prs, out)
+    except PptxSkillError as exc:
+        write_error(exc, stream=sys.stderr)
+        return 2
+    except (OSError, KeyError, TypeError, ValueError, AttributeError,
+            IndexError, json.JSONDecodeError) as exc:
+        write_error(exc, stream=sys.stderr)
+        return 2
+    write_json(report, stream=sys.stdout)
     return 0
 
 

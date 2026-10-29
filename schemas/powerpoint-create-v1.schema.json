@@ -1,0 +1,287 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.powerpoint-skill/schemas/powerpoint-create-v1.schema.json",
+  "title": "PowerPoint create spec v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "slides"
+  ],
+  "properties": {
+    "schema": {
+      "const": "powerpoint.create/v1"
+    },
+    "slide_size": {
+      "enum": [
+        "16:9",
+        "4:3"
+      ]
+    },
+    "slides": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "layout": {
+            "enum": [
+              "title",
+              "title_content",
+              "section",
+              "two_content",
+              "title_only",
+              "blank"
+            ]
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "subtitle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bullets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/bullet"
+            }
+          },
+          "background": {
+            "type": "string",
+            "pattern": "^[0-9A-Fa-f]{6}$"
+          },
+          "footer": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "slide_number": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "left": {
+                  "type": "number"
+                },
+                "top": {
+                  "type": "number"
+                },
+                "width": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "height": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": [
+                "path"
+              ]
+            }
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "rows": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "array",
+                    "minItems": 1
+                  }
+                },
+                "left": {
+                  "type": "number"
+                },
+                "top": {
+                  "type": "number"
+                },
+                "width": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "height": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": [
+                "rows"
+              ]
+            }
+          },
+          "shapes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "type": {
+                  "enum": [
+                    "rectangle",
+                    "rounded_rectangle",
+                    "oval",
+                    "diamond",
+                    "right_arrow",
+                    "chevron"
+                  ]
+                },
+                "left": {
+                  "type": "number"
+                },
+                "top": {
+                  "type": "number"
+                },
+                "width": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "height": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "fill": {
+                  "type": "string",
+                  "pattern": "^[0-9A-Fa-f]{6}$"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "text_color": {
+                  "type": "string",
+                  "pattern": "^[0-9A-Fa-f]{6}$"
+                }
+              }
+            }
+          },
+          "charts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "type": {
+                  "enum": [
+                    "bar",
+                    "bar_h",
+                    "line",
+                    "pie"
+                  ]
+                },
+                "left": {
+                  "type": "number"
+                },
+                "top": {
+                  "type": "number"
+                },
+                "width": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "height": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "title": {
+                  "type": "string"
+                },
+                "categories": {
+                  "type": "array",
+                  "minItems": 1
+                },
+                "series": {
+                  "type": "object",
+                  "minProperties": 1,
+                  "propertyNames": {
+                    "minLength": 1
+                  },
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                }
+              },
+              "required": [
+                "categories",
+                "series"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "bullet": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "level": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4
+            },
+            "size": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "bold": {
+              "type": "boolean"
+            },
+            "italic": {
+              "type": "boolean"
+            },
+            "font": {
+              "type": "string"
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^[0-9A-Fa-f]{6}$"
+            },
+            "link": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ]
+        }
+      ]
+    }
+  }
+}

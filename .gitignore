@@ -1,0 +1,18 @@
+# Python bytecode and test caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+*.egg-info/
+.coverage
+htmlcov/
+
+# Local outputs generated while developing or validating the skill
+tmp/
+render/
+*.log
+
+# Editor and operating-system metadata
+.DS_Store
+*.swp
+*~

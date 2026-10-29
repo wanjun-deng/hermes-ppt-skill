@@ -1,0 +1,28 @@
+[project]
+name = "powerpoint-skill"
+version = "1.5.0"
+description = "Offline PowerPoint creation, inspection, editing, and template tooling"
+requires-python = ">=3.10"
+dependencies = [
+  "python-pptx==1.0.2",
+  "lxml>=4.9,<7",
+  "jsonschema>=4.26,<5",
+]
+
+[project.optional-dependencies]
+materials = [
+  "python-docx>=1.2,<2",
+  "pypdf>=6,<7",
+  "openpyxl>=3.1,<4",
+]
+
+[dependency-groups]
+dev = [
+  "pytest==9.1.1",
+  "jsonschema==4.26.0",
+  "PyYAML>=6,<7",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -p no:cacheprovider"

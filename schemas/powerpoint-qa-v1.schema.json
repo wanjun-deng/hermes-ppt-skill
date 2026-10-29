@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "powerpoint.qa/v1"
+    },
+    "artifact": {
+      "type": "string",
+      "minLength": 1
+    },
+    "artifact_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "needs_revision",
+        "draft"
+      ]
+    },
+    "passed": {
+      "type": "boolean"
+    },
+    "content_checks": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "render_verified": {
+      "type": "boolean"
+    },
+    "visual_verified": {
+      "type": "boolean"
+    },
+    "visual_findings": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "schema",
+    "artifact",
+    "artifact_sha256",
+    "status",
+    "passed",
+    "content_checks",
+    "render_verified",
+    "visual_verified",
+    "visual_findings",
+    "errors"
+  ]
+}
