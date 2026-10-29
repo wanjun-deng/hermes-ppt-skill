@@ -1,0 +1,120 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "powerpoint.edit-proof/v1"
+    },
+    "source_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "artifact_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "output": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope_verified": {
+      "const": true
+    },
+    "visual_review_pending": {
+      "const": true
+    },
+    "mode": {
+      "enum": [
+        "precise",
+        "restyle",
+        "enrich"
+      ]
+    },
+    "contract": {
+      "type": "object"
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operation_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "action": {
+            "type": "string",
+            "minLength": 1
+          },
+          "slide_id": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "operation_index",
+          "action",
+          "slide_id"
+        ]
+      }
+    },
+    "package_changes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "changed": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "added": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "removed": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "changed",
+        "added",
+        "removed"
+      ]
+    },
+    "source_parts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    },
+    "geometry": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema",
+    "source_sha256",
+    "artifact_sha256",
+    "output",
+    "scope_verified",
+    "visual_review_pending",
+    "mode",
+    "contract",
+    "operations",
+    "package_changes",
+    "source_parts",
+    "geometry"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

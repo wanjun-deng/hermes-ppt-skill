@@ -235,12 +235,11 @@ say so rather than approximating.
   value's length with the original text (`pptx_read.py inspect`) and stay at
   or below it, then render-verify. The same boxes also clip the *template's own*
   Chinese copy, so a clipped line is not automatically a generation bug.
-- **Run splitting**: PowerPoint fragments paragraph text into runs at
-  spell-check and edit boundaries. `--replace-text` first merges adjacent
-  runs whose formatting is identical, so matches split across such runs
-  are replaced with formatting fully preserved. Only when a match spans
-  *genuinely differently-formatted* runs is the paragraph rewritten with
-  the first run's formatting — verify those slides after replacement.
+- **Run splitting**: PowerPoint fragments text into runs at spell-check and
+  edit boundaries. `--replace-text` retains the original runs and hyperlinks.
+  Inserted text takes the first matched character's formatting; untouched
+  prefixes/suffixes retain their original styles, including mixed-format
+  paragraphs. Fields and explicit breaks are matching boundaries.
 - **Chart slides cannot be duplicated**: each chart relationship embeds a
   separate XLSX workbook part; cloning that graph reliably is not
   supported, so `--duplicate-slide` refuses chart slides cleanly instead

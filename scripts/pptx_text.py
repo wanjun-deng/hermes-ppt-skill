@@ -30,30 +30,49 @@ def normalize_runs(paragraph):
 
 
 def replace_in_text_frame(text_frame, old, new):
+    """Keep run styles/links; inserted text takes the first matched style.
+
+    Fields and explicit breaks are boundaries. Unmatched characters retain their
+    original runs, including suffixes after matches spanning mixed formatting.
+    """
     if old == "":
         raise ValueError("replacement source text cannot be empty")
     count = 0
     for paragraph in text_frame.paragraphs:
-        joined = "".join(run.text for run in paragraph.runs)
-        if old not in joined:
-            continue
-        if not any(old in run.text for run in paragraph.runs):
-            normalize_runs(paragraph)
-        if any(old in run.text for run in paragraph.runs):
-            for run in paragraph.runs:
-                if old in run.text:
-                    count += run.text.count(old)
-                    run.text = run.text.replace(old, new)
-        else:
-            joined = "".join(run.text for run in paragraph.runs)
-            count += joined.count(old)
-            if not paragraph.runs:
-                paragraph.text = joined.replace(old, new)
-                continue
-            first = paragraph.runs[0]
-            first.text = joined.replace(old, new)
-            for run in paragraph.runs[1:]:
-                run._r.getparent().remove(run._r)
+        by_element = {run._r: run for run in paragraph.runs}
+        sequences, current = [], []
+        for element in paragraph._p:
+            if element.tag == qn("a:r"):
+                current.append(by_element[element])
+            elif element.tag in {qn("a:br"), qn("a:fld")}:
+                sequences.append(current)
+                current = []
+        sequences.append(current)
+        for runs in sequences:
+            joined = "".join(run.text for run in runs)
+            starts, ends, offset = [], [], 0
+            for run in runs:
+                starts.append(offset)
+                offset += len(run.text)
+                ends.append(offset)
+            matches, position = [], 0
+            while (position := joined.find(old, position)) >= 0:
+                matches.append(position)
+                position += len(old)
+            for start in reversed(matches):
+                end = start + len(old)
+                first = next(i for i in range(len(runs)) if starts[i] <= start < ends[i])
+                last = next(i for i in range(first, len(runs)) if starts[i] < end <= ends[i])
+                prefix = runs[first].text[:start - starts[first]]
+                suffix = runs[last].text[end - starts[last]:]
+                if first == last:
+                    runs[first].text = prefix + new + suffix
+                else:
+                    runs[first].text = prefix + new
+                    for i in range(first + 1, last):
+                        runs[i].text = ""
+                    runs[last].text = suffix
+            count += len(matches)
     return count
 
 

@@ -92,8 +92,15 @@ def verify_visual(review, manifest, artifact):
     return findings
 
 
-def quality_report(inventory, artifact, requirements=(), forbidden=(), manifest=None, review=None):
+def quality_report(inventory, artifact, requirements=(), forbidden=(), manifest=None, review=None, geometry=None):
     checks = content_checks(inventory, requirements, forbidden)
+    if geometry is not None:
+        if geometry["artifact_sha256"] != sha256_file(artifact):
+            raise ValueError("geometry report belongs to a different PPTX")
+        checks.append({"id": "geometry_advisory", "passed": True,
+                       "finding_count": len(geometry["findings"]),
+                       "new_finding_count": geometry["new_finding_count"],
+                       "visual_review_required": True})
     errors, findings = [], []
     rendered = visual = False
     try:

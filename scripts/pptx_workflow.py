@@ -14,6 +14,8 @@ from pptx_common import PptxSkillError, write_error
 from pptx_from_complete_template import compile_plan, execute_plan
 from pptx_inventory import inspect_presentation, resolve_shape_ref, sha256_file
 from pptx_quality import quality_report
+from pptx_geometry import geometry_report
+from pptx_design import review_design
 from pptx_render import render
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,7 +41,7 @@ def resolve_path(base, value):
     return path.resolve() if path.is_absolute() else (Path(base) / path).resolve()
 
 
-def compile_presentation(spec, base):
+def compile_presentation(spec, base, design=None):
     Draft202012Validator(read_json(ROOT / "schemas/powerpoint-presentation-v1.schema.json")).validate(spec)
     template = resolve_path(base, spec["template"]["path"])
     inventory = inspect_presentation(str(template))
@@ -121,19 +123,25 @@ def compile_presentation(spec, base):
         operations.append({"action": "reorder", "slide": target, "to": index})
     plan = {"schema": "powerpoint.plan/v1", "template": {k: spec["template"][k] for k in ("sha256", "slide_count")}, "operations": operations}
     compile_plan(prs, plan, str(template))
-    return template, plan, {"schema": "powerpoint.compilation/v1", "pages": page_map, "warnings": warnings}
+    compilation = {"schema": "powerpoint.compilation/v1", "pages": page_map, "warnings": warnings}
+    if design is not None:
+        compilation["design"] = review_design(design, spec["pages"])
+        warnings.extend(compilation["design"]["warnings"])
+    return template, plan, compilation
 
 
-def build(spec_path, outdir, should_render=True):
+def build(spec_path, outdir, should_render=True, design_path=None):
     spec_path, outdir = Path(spec_path).resolve(), Path(outdir).resolve()
     outdir.mkdir(parents=True, exist_ok=True)
     spec = read_json(spec_path)
-    template, plan, compilation = compile_presentation(spec, spec_path.parent)
+    design = read_json(design_path) if design_path else None
+    template, plan, compilation = compile_presentation(spec, spec_path.parent, design)
+    spec["template"]["path"] = str(template)
     previous = outdir / "output.pptx"
     if previous.exists():
         revision = outdir / "revisions" / sha256_file(previous)
         revision.mkdir(parents=True, exist_ok=True)
-        for name in ("output.pptx", "plan.json", "plan-result.json", "qa-report.json", "run.json"):
+        for name in ("output.pptx", "plan.json", "plan-result.json", "qa-report.json", "run.json", "geometry-report.json", "inventory.json", "presentation-plan.json", "compilation.json", "design-plan.json"):
             if (outdir / name).is_file():
                 shutil.copyfile(outdir / name, revision / name)
         for path in outdir.glob("visual-review*.json"):
@@ -150,11 +158,17 @@ def build(spec_path, outdir, should_render=True):
     save_json(outdir / "plan.json", plan)
     save_json(outdir / "compilation.json", compilation)
     save_json(outdir / "presentation-plan.json", spec)
+    if design is not None:
+        save_json(outdir / "design-plan.json", design)
+    elif (outdir / "design-plan.json").exists():
+        (outdir / "design-plan.json").unlink()
     artifact = outdir / "output.pptx"
     result = execute_plan(str(template), plan, str(artifact))
     save_json(outdir / "plan-result.json", result)
     inventory = inspect_presentation(str(artifact))
     save_json(outdir / "inventory.json", inventory)
+    geometry = geometry_report(artifact, template, [p["source_slide"]["index"] for p in compilation["pages"]])
+    save_json(outdir / "geometry-report.json", geometry)
     manifest = None
     if should_render:
         try:
@@ -163,9 +177,9 @@ def build(spec_path, outdir, should_render=True):
             save_json(outdir / "run.json", {"schema": "powerpoint.run/v1", "status": "render_failed", "artifact_sha256": sha256_file(artifact), "error": str(exc), "visual_review_pending": True})
             raise
         save_json(outdir / "render-manifest.json", manifest)
-    qa = quality_report(inventory, artifact, spec.get("requirements", []), spec.get("forbidden_text", []), manifest)
+    qa = quality_report(inventory, artifact, spec.get("requirements", []) + compilation.get("design", {}).get("requirements", []), spec.get("forbidden_text", []), manifest, geometry=geometry)
     save_json(outdir / "qa-report.json", qa)
-    save_json(outdir / "run.json", {"schema": "powerpoint.run/v1", "status": qa["status"], "skill_version": "1.5.0", "template_sha256": sha256_file(template), "artifact_sha256": sha256_file(artifact), "visual_review_pending": True})
+    save_json(outdir / "run.json", {"schema": "powerpoint.run/v1", "status": qa["status"], "skill_version": "1.6.0", "template_sha256": sha256_file(template), "artifact_sha256": sha256_file(artifact), "visual_review_pending": True})
     return {"ok": True, "artifact": str(artifact), "status": qa["status"], "visual_review_pending": True}
 
 
@@ -175,10 +189,12 @@ def main(argv=None):
     compiler = commands.add_parser("compile")
     compiler.add_argument("spec")
     compiler.add_argument("--output", required=True)
+    compiler.add_argument("--design", help="optional intent/design plan; does not override template styling")
     builder = commands.add_parser("build")
     builder.add_argument("spec")
     builder.add_argument("--outdir", required=True)
     builder.add_argument("--no-render", action="store_true")
+    builder.add_argument("--design", help="optional powerpoint.design/v1 sidecar")
     qa = commands.add_parser("qa")
     qa.add_argument("run_dir")
     qa.add_argument("--review", required=True)
@@ -186,16 +202,24 @@ def main(argv=None):
     try:
         if args.command == "compile":
             spec = Path(args.spec).resolve()
-            _, plan, compilation = compile_presentation(read_json(spec), spec.parent)
+            _, plan, compilation = compile_presentation(read_json(spec), spec.parent, read_json(args.design) if args.design else None)
             save_json(args.output, plan)
             result = compilation
         elif args.command == "build":
-            result = build(args.spec, args.outdir, not args.no_render)
+            result = build(args.spec, args.outdir, not args.no_render, args.design)
         else:
             folder = Path(args.run_dir).resolve()
             spec = read_json(folder / "presentation-plan.json")
             manifest = read_json(folder / "render-manifest.json") if (folder / "render-manifest.json").exists() else None
-            result = quality_report(inspect_presentation(str(folder / "output.pptx")), folder / "output.pptx", spec.get("requirements", []), spec.get("forbidden_text", []), manifest, read_json(args.review))
+            template = resolve_path(folder, spec["template"]["path"])
+            compilation = read_json(folder / "compilation.json")
+            valid_baseline = template.is_file() and sha256_file(template) == spec["template"]["sha256"]
+            geometry = geometry_report(folder / "output.pptx", template if valid_baseline else None,
+                                       [p["source_slide"]["index"] for p in compilation["pages"]] if valid_baseline else None)
+            if not valid_baseline:
+                geometry["limitations"].append("original template unavailable or changed; baseline comparison was not verified")
+            save_json(folder / "geometry-report.json", geometry)
+            result = quality_report(inspect_presentation(str(folder / "output.pptx")), folder / "output.pptx", spec.get("requirements", []) + compilation.get("design", {}).get("requirements", []), spec.get("forbidden_text", []), manifest, read_json(args.review), geometry=geometry)
             save_json(folder / "qa-report.json", result)
             state = read_json(folder / "run.json")
             state.update(status=result["status"], visual_review_pending=not result["visual_verified"])

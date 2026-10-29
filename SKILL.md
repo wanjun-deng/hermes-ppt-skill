@@ -3,7 +3,7 @@ name: powerpoint-dev
 description: Create and edit PPTX presentations from a user template, or select a suitable local template from supplied materials and requirements; inspect slides visually and verify the finished deck.
 license: MIT
 metadata:
-  version: 1.5.0
+  version: 1.6.0
   author: Nous Research and local development
   platforms: [linux, macos, windows]
   hermes:
@@ -26,7 +26,11 @@ prevents meeting a hard requirement. Historical tasks requiring confirmation do
 not establish a permanent approval rule. Resolve ordinary preferences explicitly
 and keep working. Explain unsupported requirements before changing their meaning.
 
-For small existing-deck edits, use [the CLI reference](references/cli-reference.md).
+For existing-deck edits, use [the CLI reference](references/cli-reference.md).
+When the user requires unchanged wording, font-only repair, add-only enrichment
+or a precise target, use [scoped editing](references/constrained-editing.md).
+It provides a hash-bound edit contract and verifies frozen properties before
+publishing; unsupported operations must not be presented as scope-verified.
 For a finished deck, read [the production workflow](references/production-workflow.md).
 It covers both user templates and automatic local-template matching. For visual
 inspection and report fields, read [visual QA](references/visual-qa.md). To
@@ -44,12 +48,16 @@ The shared workflow is:
    layouts. Otherwise use `pptx_templates.py` to filter the local catalog by
    executable object capabilities, then compare eligible page previews and
    content capacity. Aesthetic similarity alone is insufficient.
-3. Author `presentation-plan.json`: template SHA, source slide refs, explicit
+3. When useful, record each page's purpose, focus, type and protected wording in
+   [an optional design plan](references/design-planning.md). Respect user colors
+   and template branding. Author `presentation-plan.json`: template SHA, source slide refs, explicit
    shape bindings, source IDs, page contents and required coverage. Compile
    with `pptx_workflow.py compile`, then generate with `build`. The compiler
    clears unmapped sample text except protected attribution and explicit
    preserved shapes. Review graphics and inherited master content too.
-4. Render every final page. Call Hermes `vision_analyze` on template previews,
+4. Inspect the generated geometry advisories before rendering; compare new
+   findings with baseline/template findings. These are not a text-fit or visual
+   pass. Render every final page. Call Hermes `vision_analyze` on template previews,
    relevant material images, and every final slide. Enlarge suspicious regions;
    compare with the untouched template to identify existing defects.
 5. Record a visual report using final render hashes. Run `pptx_workflow.py qa`.
@@ -61,8 +69,12 @@ The shared workflow is:
 Reuse `powerpoint.plan/v1` and strict inventory refs. Do not create ad-hoc slide
 manipulation code when the executor supports the operation. Chart slides cannot
 be duplicated; tables must match existing dimensions. Matching must account for
-chart type, axis units, usable picture slots and page reuse. Text replacement
-preserves the first styled paragraph/run, not arbitrary mixed formatting.
+chart type, axis units, usable picture slots and page reuse. Whole-frame template filling
+preserves the first styled paragraph/run. Substring replacement keeps untouched
+runs and hyperlinks, and takes the first matched character's style for inserted
+text. It never matches across fields or explicit line breaks.
+Use `pptx_fonts.py` to verify requested family resolution and actual character
+coverage; fontconfig substitution or unavailable evidence is not a font pass.
 Capacity estimates are warnings; rendered fit determines acceptance.
 
 The library defaults to sibling `powerpoint-template-library/`; commands accept

@@ -51,6 +51,8 @@ from pptx.util import Inches, Pt
 from pptx_common import (PptxSkillError, atomic_save_presentation,
                          write_error, write_json)
 
+from pptx_fonts import set_run_fonts, set_presentation_fonts
+
 LAYOUTS = {"title": 0, "title_content": 1, "section": 2,
            "two_content": 3, "title_only": 5, "blank": 6}
 CHART_TYPES = {"bar": XL_CHART_TYPE.COLUMN_CLUSTERED,
@@ -275,7 +277,7 @@ def style_run(run, spec):
     if spec.get("italic") is not None:
         font.italic = spec["italic"]
     if spec.get("font"):
-        font.name = spec["font"]
+        set_run_fonts(run, latin=spec["font"], east_asian=spec["font"])
     if spec.get("color"):
         font.color.rgb = RGBColor.from_string(spec["color"])
     if spec.get("link"):
@@ -423,6 +425,8 @@ def main(argv=None):
         epilog=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("spec", help="path to JSON deck spec")
     parser.add_argument("output", help="output .pptx path")
+    parser.add_argument("--font-latin", help="explicit Latin font for generated text")
+    parser.add_argument("--font-cjk", help="explicit East Asian font for generated text")
     args = parser.parse_args(argv)
 
     try:
@@ -436,6 +440,8 @@ def main(argv=None):
             prs.slide_width, prs.slide_height = Inches(10), Inches(7.5)
         for slide_spec in spec["slides"]:
             build_slide(prs, slide_spec)
+        if args.font_latin or args.font_cjk:
+            set_presentation_fonts(prs, latin=args.font_latin, east_asian=args.font_cjk)
         output = atomic_save_presentation(prs, args.output)
     except PptxSkillError as exc:
         write_error(exc, stream=sys.stderr)

@@ -34,6 +34,21 @@ powerpoint-skill/
 
 模板、提示词、评测运行结果不放在源码目录，统一放到相邻的 `powerpoint-skill-eval/`。
 
+## 1.6.0 可靠性与设计规划
+
+- `pptx_constrained_edit.py`：精准修改、美化和增补的独立入口，绑定原稿 SHA，
+  在临时保存后验证修改范围及整个 PPTX 包的差异，验证失败保留已有输出。
+- `pptx_geometry.py`：检查越界、明显遮挡和待视觉确认的近似边界；标准 build/qa
+  自动保存报告，区分模板原有与新增告警。默认告警，不替代逐页视觉验收。
+- `pptx_fonts.py`：统一中西文字体写入，检查实际字体解析和指定字符覆盖；
+  create 新增 `--font-latin`、`--font-cjk`，doctor 新增可重复 `--font`。
+- 可选 `powerpoint.design/v1` 记录逐页目的、重点和必须保留的文字，
+  通过 workflow 的 `--design` 接入；不强制配色或改变企业模板。
+
+操作与边界见 [受限编辑及检查](references/constrained-editing.md)、
+[设计规划](references/design-planning.md)。这些实现未复制外部参考包的代码或文档。
+新增契约与现有 v1 执行接口分开，原有命令继续兼容。
+
 ## 关键契约
 
 - 输入：`powerpoint.create/v1`、`powerpoint.template-add/v1`、

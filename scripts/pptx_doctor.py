@@ -10,9 +10,10 @@ import sys
 from pptx import Presentation
 from pptx_common import atomic_save_presentation
 from pptx_render import render
+from pptx_fonts import probe_font
 
 
-def doctor(probe_dir=None):
+def doctor(probe_dir=None, fonts=()):
     modules = {name: importlib.util.find_spec(name) is not None
                for name in ("pptx", "lxml", "PIL", "jsonschema", "docx", "pypdf", "openpyxl")}
     result = {"schema": "powerpoint.environment/v1", "python": sys.executable,
@@ -39,6 +40,9 @@ def doctor(probe_dir=None):
         except Exception as exc:
             result["render_probe"] = {"status": "failed", "error": str(exc)}
     result["ok"] = all(modules[x] for x in ("pptx", "lxml", "PIL", "jsonschema")) and result["render_probe"]["status"] not in {"failed", "unavailable"}
+    result["fonts"] = [probe_font(family) for family in fonts]
+    if fonts:
+        result["ok"] = result["ok"] and all(row["status"] == "matched" and row["glyphs_available"] for row in result["fonts"])
     return result
 
 
@@ -46,8 +50,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--probe-dir")
     parser.add_argument("--output")
+    parser.add_argument("--font", action="append", default=[], help="probe a requested Chinese font (repeatable)")
     args = parser.parse_args()
-    report = doctor(args.probe_dir)
+    report = doctor(args.probe_dir, args.font)
     if args.output:
         Path(args.output).write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False, indent=2))

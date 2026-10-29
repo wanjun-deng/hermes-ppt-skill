@@ -1,0 +1,143 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "powerpoint.geometry/v1"
+    },
+    "artifact_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "baseline_sha256": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "policy": {
+      "const": "advisory"
+    },
+    "tolerance_emu": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "new_finding_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "slide_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "shape": {
+            "type": "object",
+            "additionalProperties": false,
+            "minProperties": 1,
+            "properties": {
+              "shape_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "path": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "minItems": 1
+              },
+              "placeholder": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "related_shape": {
+            "type": "object",
+            "additionalProperties": false,
+            "minProperties": 1,
+            "properties": {
+              "shape_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "path": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "minItems": 1
+              },
+              "placeholder": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "code": {
+            "enum": [
+              "off_canvas",
+              "likely_occluded",
+              "geometry_unconfirmed"
+            ]
+          },
+          "severity": {
+            "const": "warning"
+          },
+          "origin": {
+            "enum": [
+              "new",
+              "baseline"
+            ]
+          },
+          "evidence": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "slide_index",
+          "shape",
+          "code",
+          "severity",
+          "origin",
+          "evidence"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schema",
+    "artifact_sha256",
+    "baseline_sha256",
+    "policy",
+    "tolerance_emu",
+    "new_finding_count",
+    "limitations",
+    "findings"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

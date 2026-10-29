@@ -3,12 +3,10 @@
 
 Operations (repeatable / combinable):
   --replace-text OLD NEW   Replace text everywhere (slides, tables, notes).
-                           Adjacent runs with identical formatting are
-                           merged first, so matches PowerPoint split across
-                           identically-formatted runs keep their formatting.
-                           Only a match spanning genuinely different
-                           formats falls back to a paragraph rewrite with
-                           the first run's font (documented caveat).
+                           Preserves original runs, styles and hyperlinks.
+                           A cross-run replacement takes the first matched
+                           character's style; unmatched suffixes keep theirs.
+                           Does not match across fields or explicit breaks.
   --chart-data SPEC.json   Update a chart. Full replace spec:
                            {"slide": 0, "chart": 0,
                             "categories": ["Q1", "Q2"],

@@ -66,7 +66,7 @@ def validate_pptx_file(path):
             code="invalid_output") from exc
 
 
-def atomic_save_presentation(prs, output):
+def atomic_save_presentation(prs, output, *, validator=None):
     """Save, validate, and atomically replace ``output`` on one filesystem."""
     output = os.path.abspath(os.fspath(output))
     parent = os.path.dirname(output)
@@ -79,6 +79,8 @@ def atomic_save_presentation(prs, output):
     try:
         prs.save(temporary)
         validate_pptx_file(temporary)
+        if validator is not None:
+            validator(temporary)
         if os.path.exists(output):
             os.chmod(temporary, os.stat(output).st_mode)
         os.replace(temporary, output)

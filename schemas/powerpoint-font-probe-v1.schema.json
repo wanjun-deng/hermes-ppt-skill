@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "fonts"
+  ],
+  "properties": {
+    "schema": {
+      "const": "powerpoint.font-probe/v1"
+    },
+    "fonts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requested",
+          "status",
+          "matched_families",
+          "file",
+          "glyphs_available",
+          "missing_characters"
+        ],
+        "properties": {
+          "requested": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "matched",
+              "substituted",
+              "unconfirmed"
+            ]
+          },
+          "matched_families": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "file": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "glyphs_available": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "missing_characters": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1
+            }
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

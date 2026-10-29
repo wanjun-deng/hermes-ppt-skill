@@ -276,14 +276,10 @@ def apply_payload(slide, payload, report, allow_inferred_roles=False):
         for paragraph in shape.text_frame.paragraphs:
             for run in paragraph.runs:
                 if "font_family" in operation:
-                    run.font.name = operation["font_family"]
-                    properties = run._r.get_or_add_rPr()
-                    for name in ("ea", "cs"):
-                        element = properties.find(qn("a:" + name))
-                        if element is None:
-                            element = properties.makeelement(qn("a:" + name), {})
-                            properties.append(element)
-                        element.set("typeface", operation["font_family"])
+                    from pptx_fonts import set_run_fonts
+                    set_run_fonts(run, latin=operation["font_family"],
+                                  east_asian=operation["font_family"],
+                                  complex_script=operation["font_family"])
                 if "character_spacing_pt" in operation:
                     run._r.get_or_add_rPr().set("spc", str(round(operation["character_spacing_pt"] * 100)))
         report["filled_text"] += 1

@@ -145,6 +145,14 @@ For example `number_format: "0\"万元\""` is suitable when input values themsel
 are in 万元. The tool does not convert units. Bubble/XY data and duplicated chart
 pages remain unsupported.
 
+Build also writes `geometry-report.json` before rendering. Review new findings
+against template-baseline findings; intentional bleed/layering may be valid.
+Approximate rotated/flipped bounds require pixel inspection. Geometry is advisory
+and does not replace text-fit or visual checks. See
+[scoped edits and geometry](constrained-editing.md). For explicit page purposes,
+focal points and protected wording, optionally pass `--design design-plan.json`
+to compile/build; see [design planning](design-planning.md).
+
 After inspecting every image, save the review described in
 [visual QA](visual-qa.md), then run:
 
